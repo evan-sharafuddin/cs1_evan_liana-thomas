@@ -44,6 +44,8 @@ sound(out,freq),pause(5),clear sound
 % end
 %plot_freq(response)
 
+%% FUNCTIONS BELOW
+
 %% FILTER
 function output = myFilter(fs,input,dt,gain)
 
