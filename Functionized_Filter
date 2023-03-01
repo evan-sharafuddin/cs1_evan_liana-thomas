@@ -1,0 +1,140 @@
+
+%% SET UP
+freq = 44.1e3;
+dt = 1/freq;
+f= logspace(1.3, 4.3);
+w = 2*pi*f;
+response = zeros(size(f));
+
+%% LOAD AUDIO
+filename = "rickroll.wav";
+input = audioread(filename);
+input = input(1:5/dt);
+
+%% FILTER THAT AUDIOOOO
+
+%JUST TESTING each component filter
+%out1 = lowpass(freq,input,200,dt);
+%out1 = highpass(freq,input,8000,dt);
+%out1 = bandpass(freq,input,100,500,5,dt);
+
+%FILTERRRRRRZZZZ
+
+%gainzzzzz
+gain = [1 1 5 1 1];
+
+%can throw this into a loop later
+out1 = myFilter(freq,input,dt,gain(1));
+out2 = myFilter(freq,input,dt,gain(2));
+out3 = myFilter(freq,input,dt,gain(3));
+out4 = myFilter(freq,input,dt,gain(4));
+out5 = myFilter(freq,input,dt,gain(5));
+
+out = out1 + out2 + out3 + out4 + out5;
+
+%TEST: Just play original audio
+%sound(input,freq)
+
+%% PLAY filtered audios
+sound(out,freq),pause(5),clear sound
+
+%Plot Mag and Phase
+% for m=1:length(f)
+%     response(m) = out1(end) / input(end);
+% end
+%plot_freq(response)
+
+%% FILTER
+function output = myFilter(fs,input,dt,gain)
+
+%DEFINIED CUTOFF FREQUENCIES
+lp_fc = 100;
+bp1_fc1 = 100;
+bp1_fc2 = 500;
+bp2_fc1 = 500;
+bp2_fc2 = 3000;
+bp3_fc1 = 30000;
+bp3_fc2 = 10000;
+hp_fc = 10000;
+
+%Lowpass
+y = lowpass(fs,input,lp_fc,dt);
+%Bandpass
+y = y + bandpass(fs,input,bp1_fc1,bp1_fc2,5,dt);
+%Bandpass
+y = y + bandpass(fs,input,bp2_fc1,bp2_fc2,5,dt);
+%Bandpass
+y = y + bandpass(fs,input,bp3_fc1,bp3_fc2,5,dt);
+%Highpass
+y = y + highpass(fs,input,hp_fc,dt);
+
+output = y;
+output = output.*gain;
+end
+
+%% FILTER FUNCTIONS
+
+%LOWPASS
+function output = lowpass(fs,x,fc,dt)
+t =0:dt:5-dt;
+tau = 1/2/pi/fc;
+y = lsim(tf(1/tau, [1, 1/tau]),x,t);
+output = y;
+end
+
+%HIGHPASS
+function output = highpass(fs,x,fc,dt)
+t =0:dt:5-dt;
+tau= 1/2/pi/fc;
+% Filtered output using lsim
+y = lsim(tf([1 0], [1, 1/tau]),x,t);
+output = y;
+end
+
+%BANDPASS
+function output = bandpass(fs,x,lp_fc,hp_fc,iter,dt)
+t =0:dt:5-dt;
+for n = 1:iter
+    y = lowpass(fs,x,lp_fc,dt);
+    y = highpass(fs,x,hp_fc,dt);
+end
+output = y;
+
+end
+
+%% PLOTTING FUNCTIONS
+
+%BODE PLOT
+function plot_freq(y)
+f= logspace(1.301, 4.301);
+figure;
+subplot(2, 1, 1);
+semilogx(f, 20*log(abs(y)));
+title("H(w) Mag");
+xlabel("Frequency");
+ylabel("Db");
+subplot(2, 1, 2);
+semilogx(f, angle(y)/pi);
+title("H(w) Angle");
+xlabel("Frequency");
+ylabel("Angle");
+end 
+
+%Attenuation Factor
+function output = atten_fact(input,filtered)
+
+f = logspace(1,5,135);
+H_mag = zeros(length(f),1);
+H_phase = zeros(length(f),1);
+
+for i = 1:length(f)
+    H_mag(i) = abs(filtered(end)/input(end));
+    H_phase(i) = angle(filtered(end)/input(end));
+end
+
+attenuation_factor = max(H_mag);
+
+output = attenuation_factor;
+end
+
+
