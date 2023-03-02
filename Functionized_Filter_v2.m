@@ -1,6 +1,18 @@
 % I got the filters to filter a lot better. The cutoff frequencies still need to be optomized 
 % though and it might be nice for Thomas to graph some of the frequency responses of some 
-% of the filters. Let me know if anything doesn't make sense --Evan
+% of the filters. 
+
+% in myFilters() I multiplied the output from each filter by values to get them back 
+% up to the original audio level. I multipled the lowpass and highpass by 1.5 (trial
+% and error) but they still seemed quiet so might be good to play around with that. 
+% For the bandpass filters I multiplied by the reciprocal of the attenuation factor 
+% thing to kind of "cancel out" the attenuation, but then also multiplied by 1.5 to 
+% get it a little bit louder. Might be nice to change this as you change the 
+% cutoff frequencies but with everything set up the unity preset works pretty well
+
+% Let me know if anything doesn't make sense --Evan
+
+
 
 
 %% SET UP
