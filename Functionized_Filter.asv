@@ -42,9 +42,8 @@ sound(out,freq),pause(5),clear sound
 
 %% FILTER
 function output = myFilter(fs,input,dt,gain)
-if(len(gain) ~= 5)
-    return
-end
+if(len(gain) != 5)
+    return 
 %DEFINIED CUTOFF FREQUENCIES
 lp_fc = 100;
 bp1_fc1 = 100;
