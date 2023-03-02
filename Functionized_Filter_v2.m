@@ -1,3 +1,7 @@
+% I got the filters to filter a lot better. The cutoff frequencies still need to be optomized 
+% though and it might be nice for Thomas to graph some of the frequency responses of some 
+% of the filters. Let me know if anything doesn't make sense --Evan
+
 
 %% SET UP
 freq = 44.1e3;
