@@ -7,8 +7,9 @@ w = 2*pi*f;
 response = zeros(size(f));
 
 %% LOAD AUDIO
-filename = "rickroll.wav";
+filename = "Blue in Green with Siren.wav";
 input = audioread(filename);
+input = input(:, 1);
 input = input(1:5/dt);
 
 %% FILTER THAT AUDIOOOO
@@ -21,7 +22,7 @@ input = input(1:5/dt);
 %FILTERRRRRRZZZZ
 
 %gainzzzzz
-gain = [1 1 5 1 1];
+gain = [0 0 0 0 10];
 
 %can throw this into a loop later
 out = myFilter(freq,input,dt,gain);
@@ -42,31 +43,31 @@ sound(out,freq),pause(5),clear sound
 
 %% FILTER
 function output = myFilter(fs,input,dt,gain)
-if(len(gain) != 5)
-    return 
+if(length(gain) ~= 5)
+    return
+end
 %DEFINIED CUTOFF FREQUENCIES
-lp_fc = 100;
-bp1_fc1 = 100;
-bp1_fc2 = 500;
+lp_fc = 25;
+bp1_fc1 = 200;
+bp1_fc2 = 250;
 bp2_fc1 = 500;
-bp2_fc2 = 3000;
-bp3_fc1 = 3000;
-bp3_fc2 = 10000;
-hp_fc = 10000;
+bp2_fc2 = 750;
+bp3_fc1 = 1600;
+bp3_fc2 = 2000;
+hp_fc =15000;
 
 %Lowpass
-y = gain(1) * lowpass(fs,input,lp_fc,dt);
+y = gain(1) .* lowpass(fs,input,lp_fc,dt);
 %Bandpass
-y = y + gain(2) * bandpass(fs,input,bp1_fc1,bp1_fc2,5,dt);
+y = y + (gain(2) .* bandpass(fs,input,bp1_fc1,bp1_fc2,5,dt));
 %Bandpass
-y = y + gain(3) * bandpass(fs,input,bp2_fc1,bp2_fc2,5,dt);
+y = y + (gain(3) .* bandpass(fs,input,bp2_fc1,bp2_fc2,5,dt));
 %Bandpass
-y = y + gain(4) * bandpass(fs,input,bp3_fc1,bp3_fc2,5,dt);
+y = y + (gain(4) .* bandpass(fs,input,bp3_fc1,bp3_fc2,5,dt));
 %Highpass
-y = y + gain(5) * highpass(fs,input,hp_fc,dt);
+y = y + (gain(5) .* highpass(fs,input,hp_fc,dt));
 
 output = y;
-output = output.*gain;
 end
 
 %% FILTER FUNCTIONS
@@ -134,4 +135,81 @@ attenuation_factor = max(H_mag);
 output = attenuation_factor;
 end
 
+function plot_all (inputs)
+% inputs needs to be 
+t = 0:1/freq:4;
 
+tao1 = 0;
+tao2 = 0;
+
+
+f= logspace(1.3, 4.3);
+
+w = 2*pi*f;
+
+response = zeros(size(f));
+
+figure;
+hold on;
+% for every frequency in the logspace, create the input function and run it
+% through a highpass and lowpass filter. Take the end time input to output
+% ratio, as at the end the system should be stable.
+for i = 1:5
+    if (i == 1)
+        tao1 = 1/2/pi/20;
+        tao2 = 0;
+    elseif(i == 2)
+        tao1 = 1/2/pi/150;
+        tao2 = 1/2/pi/200;
+    
+    elseif(i==3)
+        tao1 = 1/2/pi/500;
+        tao2 = 1/2/pi/750;
+    
+    elseif(i==4)
+        tao1 = 1/2/pi/1600;
+        tao2 = 1/2/pi/2000;
+        
+    else
+        % tao1 = 1/2/pi/19000;
+        tao1 = 0;
+        tao2 = 1/2/pi/20000;
+    end
+            
+    for x=1:length(f)
+        in = exp(1i*w(x)*t);
+        if (tao1 == 0)
+            Hout = lsim([1, 0],[1, 1/tao2], in, t); %highpass
+
+        elseif(tao2 == 0)
+            Hout = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
+
+        else
+            intermediate = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
+
+            Hout = lsim([1, 0],[1, 1/tao2], intermediate, t); %highpass
+
+        end
+        response(x) = Hout(end) / in(end);
+
+    end
+    
+    subplot(2, 1, 1);
+    hold on;
+    set(gca,'XScale','log')
+    semilogx(f, 20*log(abs(response)));
+    title("|H(w)|");
+    xlabel("Frequency");
+    ylabel("Db");
+    subplot(2, 1, 2);
+    hold on;
+    set(gca,'XScale','log')
+    semilogx(f, angle(response)/pi);
+    title("H(w) Angle");
+    xlabel("Frequency");
+    ylabel("Angle");
+
+end
+
+legend("Filter 1", "Filter 2", "Filter 3", "Filter 4", "Filter 5");
+end
