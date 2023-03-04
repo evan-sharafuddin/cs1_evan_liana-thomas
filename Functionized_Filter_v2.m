@@ -25,6 +25,7 @@ response = zeros(size(f));
 %% LOAD AUDIO
 filename = "Blue in Green with Siren.wav";
 input = audioread(filename);
+
 input = input(1:5/dt);
 
 %% FILTER THAT AUDIOOOO
@@ -38,17 +39,20 @@ input = input(1:5/dt);
 
 %gainzzzzz
 gain = [0 0 1 0 0]; % setting all gains equal to 1 seems to be pretty good unity setting
-
+time = 0:dt:5-dt;
 %can throw this into a loop later
-out = myFilter(input,dt,gain,5);
+out = myFilter(input,time, dt,gain,5);
 
+coeff = [25, 200, 250, 500, 750, 1600, 2000, 15000];
+
+plot_all(coeff)
 % extracts the frequencies in each channel -- use to optomize the frequency
 % cutoff values
-out1 = myFilter(input,dt,[1 0 0 0 0],5);
-out2 = myFilter(input,dt,[0 1 0 0 0],5);
-out3 = myFilter(input,dt,[0 0 1 0 0],5);
-out4 = myFilter(input,dt,[0 0 0 1 0],5);
-out5 = myFilter(input,dt,[0 0 0 0 1],5);
+out1 = myFilter(input,time, dt,[1 0 0 0 0],5);
+out2 = myFilter(input,time,dt,[0 1 0 0 0],5);
+out3 = myFilter(input,time,dt,[0 0 1 0 0],5);
+out4 = myFilter(input,time,dt,[0 0 0 1 0],5);
+out5 = myFilter(input,time,dt,[0 0 0 0 1],5);
 %%
 %TEST: Just play original audio
 sound(input,freq),pause(5),clear sound
@@ -67,7 +71,7 @@ sound(out5,freq),pause(5),clear sound
 %% FUNCTIONS BELOW
 
 %% FILTER
-function output = myFilter(input,dt,gain,iter)
+function output = myFilter(input,time, dt,gain,iter)
 if(length(gain) ~= 5)
     return
 end
@@ -88,15 +92,15 @@ hp_fc = 5000;
 % resulted in mostly no change)
 
 %Lowpass
-y = gain(1) * 1.5*lowpass(input,lp_fc,dt,3); % LP filter iter controlled manually
+y = gain(1) * 1.5*lowpass(input,lp_fc,time,3); % LP filter iter controlled manually
 %Bandpass
-y = y + gain(2) * 1.5/atten_fact(bp1_fc1,bp1_fc2,iter,dt)*bandpass(input,bp1_fc1,bp1_fc2,iter,dt);
+y = y + gain(2) * 1.5/atten_fact(bp1_fc1,bp1_fc2,iter,dt)*bandpass(input,bp1_fc1,bp1_fc2,iter,time);
 %Bandpass
-y = y + gain(3) * 1.5/atten_fact(bp2_fc1,bp2_fc2,iter,dt)*bandpass(input,bp2_fc1,bp2_fc2,iter,dt);
+y = y + gain(3) * 1.5/atten_fact(bp2_fc1,bp2_fc2,iter,dt)*bandpass(input,bp2_fc1,bp2_fc2,iter,time);
 %Bandpas
-y = y + gain(4) * 1.5/atten_fact(bp3_fc1,bp3_fc2,iter,dt)*bandpass(input,bp3_fc1,bp3_fc2,iter,dt);
+y = y + gain(4) * 1.5/atten_fact(bp3_fc1,bp3_fc2,iter,dt)*bandpass(input,bp3_fc1,bp3_fc2,iter,time);
 %Highpass
-y = y + gain(5) * 1.5*highpass(input,hp_fc,dt,3); % HP filter iter controlled manually
+y = y + gain(5) * 1.5*highpass(input,hp_fc,time,3); % HP filter iter controlled manually
 
 output = y;
 end
@@ -106,35 +110,32 @@ end
 %% FILTER FUNCTIONS
 
 %LOWPASS
-function output = lowpass(x,fc,dt,iter)
-t =0:dt:5-dt;
+function output = lowpass(x,fc,time,iter)
 tau = 1/2/pi/fc;
 y = x;
 for i = 1:iter
-y = lsim(tf(1/tau, [1, 1/tau]),y,t);
+y = lsim(tf(1/tau, [1, 1/tau]),y,time);
 end
 output = y;
 end
 
 %HIGHPASS
-function output = highpass(x,fc,dt,iter)
-t =0:dt:5-dt;
+function output = highpass(x,fc,time,iter)
 tau= 1/2/pi/fc;
 % Filtered output using lsim
 y = x;
 for i = 1:iter
-y = lsim(tf([1 0], [1, 1/tau]),y,t);
+y = lsim(tf([1 0], [1, 1/tau]),y,time);
 end
 output = y;
 end
 
 %BANDPASS
-function output = bandpass(x,lp_fc,hp_fc,iter,dt)
-t =0:dt:5-dt;
+function output = bandpass(x,lp_fc,hp_fc,iter,time)
 y=x;
 for n = 1:iter
-    y = lowpass(y,lp_fc,dt,1);
-    y = highpass(y,hp_fc,dt,1);
+    y = lowpass(y,lp_fc,time,1);
+    y = highpass(y,hp_fc,time,1);
 end
 output = y;
 
@@ -177,7 +178,7 @@ hp_tau = 1/2/pi/hp_fc;
 t = 0:dt:100*hp_tau;
 
 for i = 1:length(f)
-    input = exp(j*2*pi*f(i)*t);
+    input = exp(1i*2*pi*f(i)*t);
     output = input;
  
     % simulating the bandpass filter here
@@ -192,3 +193,85 @@ attenuation_factor = max(H_mag);
 output = attenuation_factor;
 end
 
+function plot_all (coeff)
+% inputs needs to be length 8
+freq = 44.1e3;
+
+time = 0:1/freq:4;
+
+tao1 = 0;
+tao2 = 0;
+
+f= logspace(1.3, 4.3);
+
+w = 2*pi*f;
+response = zeros(size(f));
+
+figure;
+hold on;
+% for every frequency in the logspace, create the input function and run it
+% through a highpass and lowpass filter. Take the end time input to output
+% ratio, as at the end the system should be stable.
+for i = 1:5
+    if (i == 1)
+        tao1 = coeff(1); % 20
+        tao2 = 0;
+    elseif(i == 2)
+        tao1 = coeff(2); % 150
+        tao2 = coeff(3); % 250
+    
+    elseif(i==3)
+        tao1 = coeff(4); % 500
+        tao2 = coeff(5); % 750
+    
+    elseif(i==4)
+        tao1 = coeff(6); % 1600
+        tao2 = coeff(7); % 2000
+        
+    else
+        % tao1 = 1/2/pi/19000;
+        tao1 = 0;
+        tao2 = coeff(8); % 20000
+    end
+            
+    for x=1:length(f)
+        in = exp(1i*w(x)*time);
+        if (tao1 == 0)
+            % Hout = lsim([1, 0],[1, 1/tao2], in, t); %highpass
+            Hout = highpass(in, tao2, time, 1);
+
+        elseif(tao2 == 0)
+            % Hout = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
+            Hout = lowpass(in, tao1, time, 1);
+
+        else
+            % intermediate = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
+
+            % Hout = lsim([1, 0],[1, 1/tao2], intermediate, t); %highpass
+            
+            Hout = bandpass(in, tao1, tao2, 1, time);
+
+        end
+        response(x) = Hout(end) / in(end);
+
+    end
+    
+    subplot(2, 1, 1);
+    hold on;
+    set(gca,'XScale','log')
+    semilogx(f, 20*log(abs(response)));
+    title("|H(w)|");
+    xlabel("Frequency");
+    ylabel("Db");
+    subplot(2, 1, 2);
+    hold on;
+    set(gca,'XScale','log')
+    semilogx(f, angle(response)/pi);
+    title("H(w) Angle");
+    xlabel("Frequency");
+    ylabel("Angle");
+
+end
+
+legend("Filter 1", "Filter 2", "Filter 3", "Filter 4", "Filter 5");
+end
