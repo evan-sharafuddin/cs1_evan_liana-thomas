@@ -38,21 +38,23 @@ input = input(1:5/dt);
 %FILTERRRRRRZZZZ
 
 %gainzzzzz
-gain = [0 0 1 0 0]; % setting all gains equal to 1 seems to be pretty good unity setting
+% gain = [0 0 1 0 0]; % setting all gains equal to 1 seems to be pretty good unity setting
 time = 0:dt:5-dt;
 %can throw this into a loop later
-out = myFilter(input,time, dt,gain,5);
+% out = myFilter(input,time, dt,gain,5);
 
-coeff = [25, 200, 250, 500, 750, 1600, 2000, 15000];
+% coeff = [25, 200, 250, 500, 750, 1600, 2000, 15000];
+% plot_all(coeff)
 
-plot_all(coeff)
+out = treble(input, time, dt);
+
 % extracts the frequencies in each channel -- use to optomize the frequency
 % cutoff values
-out1 = myFilter(input,time, dt,[1 0 0 0 0],5);
-out2 = myFilter(input,time,dt,[0 1 0 0 0],5);
-out3 = myFilter(input,time,dt,[0 0 1 0 0],5);
-out4 = myFilter(input,time,dt,[0 0 0 1 0],5);
-out5 = myFilter(input,time,dt,[0 0 0 0 1],5);
+% out1 = myFilter(input,time, dt,[1 0 0 0 0],5);
+% out2 = myFilter(input,time,dt,[0 1 0 0 0],5);
+% out3 = myFilter(input,time,dt,[0 0 1 0 0],5);
+% out4 = myFilter(input,time,dt,[0 0 0 1 0],5);
+% out5 = myFilter(input,time,dt,[0 0 0 0 1],5);
 %%
 %TEST: Just play original audio
 sound(input,freq),pause(5),clear sound
@@ -60,15 +62,19 @@ sound(input,freq),pause(5),clear sound
 % PLAY filtered audios
 sound(out,freq),pause(5),clear sound
 %%
-
 % play sounds in each channel
-sound(out1,freq),pause(5),clear sound
-sound(out2,freq),pause(5),clear sound % at the moment, channels 1 and 2 are essentially the same 
-sound(out3,freq),pause(5),clear sound
-sound(out4,freq),pause(5),clear sound
-sound(out5,freq),pause(5),clear sound
+% sound(out1,freq),pause(5),clear sound
+% sound(out2,freq),pause(5),clear sound % at the moment, channels 1 and 2 are essentially the same 
+% sound(out3,freq),pause(5),clear sound
+% sound(out4,freq),pause(5),clear sound
+% sound(out5,freq),pause(5),clear sound
 
 %% FUNCTIONS BELOW
+function output = treble (inputSig, time, dt)
+
+output = myFilter(inputSig,time, dt,[0.2 0.4 1 2 2],5);
+
+end
 
 %% FILTER
 function output = myFilter(input,time, dt,gain,iter)
@@ -196,7 +202,7 @@ end
 function plot_all (coeff)
 % inputs needs to be length 8
 freq = 44.1e3;
-
+dt = 1/freq;
 time = 0:1/freq:4;
 
 tao1 = 0;
@@ -238,18 +244,18 @@ for i = 1:5
         in = exp(1i*w(x)*time);
         if (tao1 == 0)
             % Hout = lsim([1, 0],[1, 1/tao2], in, t); %highpass
-            Hout = highpass(in, tao2, time, 1);
+            Hout = 1.5*highpass(in, tao2, time, 5);
 
         elseif(tao2 == 0)
             % Hout = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
-            Hout = lowpass(in, tao1, time, 1);
+            Hout = 1.5*lowpass(in, tao1, time, 5);
 
         else
             % intermediate = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
 
             % Hout = lsim([1, 0],[1, 1/tao2], intermediate, t); %highpass
             
-            Hout = bandpass(in, tao1, tao2, 1, time);
+            Hout = 1.5/atten_fact(tao1,tao2,5,dt) * bandpass(in, tao1, tao2, 5, time);
 
         end
         response(x) = Hout(end) / in(end);
