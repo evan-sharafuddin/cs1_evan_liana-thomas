@@ -28,12 +28,19 @@ input = audioread(filename);
 
 input = input(1:5/dt);
 
-%% FILTER THAT AUDIOOOO
+%% Filtering Out Radio Static
+am_input = audioread("bird_sound - Made with Clipchamp.mp4");
+am_input = am_input(1:5/dt);
 
-%JUST TESTING each component filter
-%out1 = lowpass(freq,input,200,dt);
-%out1 = highpass(freq,input,8000,dt);
-%out1 = bandpass(freq,input,100,500,5,dt);
+figure, spectrogram(am_input,1048,200,1048,freq),title("Radio before filter")
+
+am_filtered = myFilter(am_input,0:dt:5-dt, dt,[0 0 1 0 0],5);
+
+figure, spectrogram(am_filtered,256,200,256,freq),title("Radio after filter")
+
+% woo it works to isolate that one call pretty well at the end of the clip
+
+%% FILTER THAT AUDIOOOO
 
 %FILTERRRRRRZZZZ
 
