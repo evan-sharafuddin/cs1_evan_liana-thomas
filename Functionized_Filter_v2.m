@@ -46,7 +46,9 @@ time = 0:dt:5-dt;
 % coeff = [25, 200, 250, 500, 750, 1600, 2000, 15000];
 % plot_all(coeff)
 
-out = treble(input, time, dt);
+outTreble = treble(input, time, dt);
+outBase = bass(input, time, dt);
+outUnity = unity(input, time, dt);
 
 % extracts the frequencies in each channel -- use to optomize the frequency
 % cutoff values
@@ -79,17 +81,15 @@ output = myFilter(inputSig,time, dt,gain,5);
 end
 
 %% BASS BOOST
-function output = bassBoost(audio_in, time, dt)
+function output = bass(audio_in, time, dt)
 gain = [10 1 1 1 1];
-out = myFilter(input,time, dt,gain,5);
-sound(out,freq),pause(5),clear sound
+output = myFilter(input,time, dt,gain,5);
 end
 
 %% UNITY
 function output = unity(audio_in, time, dt)
 gain = [1 1 1 1 1]; % setting all gains equal to 1 seems to be pretty good unity setting
-out = myFilter(input,time, dt,gain,5);
-sound(out,freq),pause(5),clear sound
+output = myFilter(input,time, dt,gain,5);
 end
 
 %% Gain to dB
