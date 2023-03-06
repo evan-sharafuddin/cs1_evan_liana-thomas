@@ -70,11 +70,33 @@ sound(out,freq),pause(5),clear sound
 % sound(out5,freq),pause(5),clear sound
 
 %% FUNCTIONS BELOW
-function output = treble (inputSig, time, dt)
 
-output = myFilter(inputSig,time, dt,[0.2 0.4 1 2 2],5);
+%% TREBLE BOOST
+function output = treble (inputSig, time, dt)
+gain = [0.2 0.4 1 2 2];
+output = myFilter(inputSig,time, dt,gain,5);
 
 end
+
+%% BASS BOOST
+function output = bassBoost(audio_in, time, dt)
+gain = [10 1 1 1 1];
+out = myFilter(input,time, dt,gain,5);
+sound(out,freq),pause(5),clear sound
+end
+
+%% UNITY
+function output = unity(audio_in, time, dt)
+gain = [1 1 1 1 1]; % setting all gains equal to 1 seems to be pretty good unity setting
+out = myFilter(input,time, dt,gain,5);
+sound(out,freq),pause(5),clear sound
+end
+
+%% Gain to dB
+function out = gainToDb(gain_val)
+out = 20*log(gain_val);
+end
+
 
 %% FILTER
 function output = myFilter(input,time, dt,gain,iter)
