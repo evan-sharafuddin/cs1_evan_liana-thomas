@@ -23,7 +23,7 @@ w = 2*pi*f;
 response = zeros(size(f));
 
 %% LOAD AUDIO
-filename = "Blue in Green with Siren.wav";
+filename = "Giant Steps Bass Cut.wav";
 input = audioread(filename);
 
 input = input(1:5/dt);
@@ -62,7 +62,7 @@ outUnity = unity(input, time, dt);
 sound(input,freq),pause(5),clear sound
 
 % PLAY filtered audios
-sound(out,freq),pause(5),clear sound
+sound(outTreble,freq),pause(5),clear sound
 %%
 % play sounds in each channel
 % sound(out1,freq),pause(5),clear sound
@@ -75,7 +75,7 @@ sound(out,freq),pause(5),clear sound
 
 %% TREBLE BOOST
 function output = treble (inputSig, time, dt)
-gain = [0.2 0.4 1 2 2];
+gain = [.5 .6 1 2 2];
 output = myFilter(inputSig,time, dt,gain,5);
 
 end
@@ -83,13 +83,13 @@ end
 %% BASS BOOST
 function output = bass(audio_in, time, dt)
 gain = [10 1 1 1 1];
-output = myFilter(input,time, dt,gain,5);
+output = myFilter(audio_in,time, dt,gain,5);
 end
 
 %% UNITY
 function output = unity(audio_in, time, dt)
 gain = [1 1 1 1 1]; % setting all gains equal to 1 seems to be pretty good unity setting
-output = myFilter(input,time, dt,gain,5);
+output = myFilter(audio_in,time, dt,gain,5);
 end
 
 %% Gain to dB
