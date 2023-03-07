@@ -93,6 +93,22 @@ subplot(2,1,2),title("Blue in Green without siren"),xlim([0 12])
 spectrogram(blue_green_filtered(:,1),1048,200,1048,freq)
 hold off
 
+%% bird thing
+bird_input = audioread("bird sound - Made with Clipchamp.mp4");
+bird_time = 0:dt:length(bird_input)*dt-dt;
+
+bird_filtered = zeros(size(bird_input));
+bird_filtered(:,1) = myFilter(bird_input(:,1),bird_time,dt,[0 0 1 0 0],5);
+bird_filtered(:,2) = myFilter(bird_input(:,2),bird_time,dt,[0 0 1 0 0],5);
+figure,hold on
+subplot(2,1,1),spectrogram(bird_input(:,1),1048,200,1048,freq),title("Bird recording before filter")
+subplot(2,1,2),spectrogram(bird_filtered(:,1),1048,200,1048,freq),title("Bird recording after filter")
+hold off
+
+sound(bird_input,freq),pause(5),clear sound
+sound(bird_filtered,freq)
+% woo it works to isolate that one call pretty well at the end of the clip
+
 %% LOAD AUDIO
 filename = "Giant Steps Bass Cut.wav";
 input = audioread(filename);
