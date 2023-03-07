@@ -22,18 +22,83 @@ f= logspace(1.3, 4.3);
 w = 2*pi*f;
 response = zeros(size(f));
 
+%% Processing the jazz signals
+% loading audio
+giant_steps = audioread("Giant Steps Bass Cut.wav");
+space_station = audioread("Space Station - Treble Cut.wav");
+giant_time = 0:dt:(length(giant_steps)*dt-dt);
+space_time = 0:dt:(length(space_station)*dt-dt);
+
+% filtering audio -- need to filter both channels
+giant_steps_bass = zeros(length(giant_steps),2);
+space_station_treble = zeros(length(space_station),2);
+giant_steps_bass(:,1) = bass(giant_steps(:,1),giant_time,dt);
+giant_steps_bass(:,2) = bass(giant_steps(:,2),giant_time,dt);
+space_station_treble(:,1) = treble(space_station(:,1),space_time,dt);
+space_station_treble(:,2) = treble(space_station(:,2),space_time,dt);
+
+% before and after
+sound(giant_steps,freq),pause(3),clear sound
+sound(giant_steps_bass,freq),pause(5),clear sound
+sound(space_station,freq),pause(3),clear sound
+sound(space_station_treble,freq),pause(5),clear sound
+
+% visualizing the changes -- only looking at one channel
+figure,hold on
+subplot(2,1,1),spectrogram(giant_steps(:,1),1048,200,1048,freq)
+title("Giant Steps, before bass-boosted preset"),clim([-140 -30]),xlim([0 12])
+subplot(2,1,2),spectrogram(giant_steps_bass(:,1),1048,200,1048,freq)
+title("Giant Steps, after bass-boosted preset"),clim([-140 -30]),xlim([0 12])
+hold off
+
+figure,hold on
+subplot(2,1,1),spectrogram(space_station(:,1),1048,200,1048,freq)
+title("Space Station, before treble boost preset"),clim([-140 -30]),xlim([0 12])
+subplot(2,1,2),spectrogram(space_station_treble(:,1),1048,200,1048,freq)
+title("Space Station, after treble boost preset"),clim([-140 -30]),xlim([0 12])
+hold off
+
+% demonstrating the unity filter
+giant_steps_unity = zeros(length(giant_steps),2);
+giant_steps_unity(:,1) = unity(giant_steps(:,1),giant_time,dt);
+giant_steps_unity(:,2) = unity(giant_steps(:,2),giant_time,dt);
+
+figure,hold on
+subplot(2,1,1),spectrogram(giant_steps(:,1),1048,200,1048,freq)
+title("Giant Steps, before unity preset"),clim([-140 -30]),xlim([0 12])
+subplot(2,1,2),spectrogram(giant_steps_unity(:,1),1048,200,1048,freq)
+title("Giant Steps, after unity preset"),clim([-140 -30]),xlim([0 12])
+hold off
+
+%% removing unwanted background noise
+blue_green = audioread("Blue in Green with Siren.wav");
+blue_time = 0:dt:length(blue_green)*dt-dt;
+
+% listen to before and process before
+sound(blue_green,freq)
+
+% siren noise occurs starting at ~ 1kHz, therefore, we want the first two
+% bands of the equlaizer to be set to unity while the other three should be
+% mostly/completely attenuated
+blue_green_filtered = zeros(size(blue_green));
+blue_green_filtered(:,1) = myFilter(blue_green(:,1),blue_time,dt,[1 1 0 0 0],5);
+blue_green_filtered(:,2) = myFilter(blue_green(:,2),blue_time,dt,[1 1 0 0 0],5);
+
+% listening to sound after filter
+sound(blue_green_filtered,freq)
+figure,hold on
+subplot(2,1,1),title("Blue in Green with siren"),xlim([0 12])
+spectrogram(blue_green(:,1),1048,200,1048,freq)
+subplot(2,1,2),title("Blue in Green without siren"),xlim([0 12])
+spectrogram(blue_green_filtered(:,1),1048,200,1048,freq)
+hold off
+
 %% LOAD AUDIO
 filename = "Giant Steps Bass Cut.wav";
 input = audioread(filename);
-
 input = input(1:5/dt);
 
 %% FILTER THAT AUDIOOOO
-
-%JUST TESTING each component filter
-%out1 = lowpass(freq,input,200,dt);
-%out1 = highpass(freq,input,8000,dt);
-%out1 = bandpass(freq,input,100,500,5,dt);
 
 %FILTERRRRRRZZZZ
 
@@ -75,14 +140,14 @@ sound(outTreble,freq),pause(5),clear sound
 
 %% TREBLE BOOST
 function output = treble (inputSig, time, dt)
-gain = [.5 .6 1 2 2];
+gain = [1 1 1 5 5];
 output = myFilter(inputSig,time, dt,gain,5);
 
 end
 
 %% BASS BOOST
 function output = bass(audio_in, time, dt)
-gain = [10 1 1 1 1];
+gain = [10 5 1 1 1];
 output = myFilter(audio_in,time, dt,gain,5);
 end
 
@@ -106,7 +171,7 @@ end
 %DEFINIED CUTOFF FREQUENCIES
 lp_fc = 150;
 bp1_fc1 = 150;
-bp1_fc2 = 200;
+bp1_fc2 = 300;
 bp2_fc1 = 500;
 bp2_fc2 = 1000;
 bp3_fc1 = 3000;
