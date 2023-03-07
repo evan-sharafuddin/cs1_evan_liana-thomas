@@ -384,3 +384,194 @@ end
 
 legend("Filter 1", "Filter 2", "Filter 3", "Filter 4", "Filter 5");
 end
+%% for the preset responses
+function plot_preset ()
+% inputs needs to be length 8
+freq = 44.1e3;
+dt = 1/freq;
+time = 0:1/freq:4;
+
+f= logspace(1.3, 4.3);
+
+w = 2*pi*f;
+response = zeros(size(f));
+
+figure;
+hold on;
+% for every frequency in the logspace, create the input function and run it
+% through a highpass and lowpass filter. Take the end time input to output
+% ratio, as at the end the system should be stable.
+for i = 1:3
+    if (i == 1)
+        for x=1:length(f)
+            in = exp(1i*w(x)*time);
+            Hout = bass(in, time, dt);
+            response(x) = Hout(end) / in(end);
+        end
+        
+    elseif(i == 2)
+        for x=1:length(f)
+            in = exp(1i*w(x)*time);
+            Hout = unity(in, time, dt);
+            response(x) = Hout(end) / in(end);
+        end
+    
+    else
+        for x=1:length(f)
+            in = exp(1i*w(x)*time);
+            Hout = treble(in, time, dt);
+            response(x) = Hout(end) / in(end);
+        end
+    end
+    
+    
+    subplot(2, 1, 1);
+    hold on;
+    set(gca,'XScale','log')
+    semilogx(f, 20*log(abs(response)));
+    title("|H(w)|");
+    xlabel("Frequency");
+    ylabel("Db");
+    subplot(2, 1, 2);
+    hold on;
+    set(gca,'XScale','log')
+    semilogx(f, angle(response)/pi);
+    title("H(w) Angle");
+    xlabel("Frequency");
+    ylabel("Angle");
+
+end
+
+legend("Bass", "Unity", "Treble");
+end
+
+%% Find the impulse responses
+function impulse_response(coeff)
+% inputs needs to be length 8
+freq = 44.1e3;
+dt = 1/freq;
+time = 0:1/freq:.0075;
+
+tao1 = 0;
+tao2 = 0;
+
+f= logspace(1.3, 4.3);
+
+w = 2*pi*f;
+response = zeros(size(f));
+
+figure;
+hold on;
+% for every frequency in the logspace, create the input function and run it
+% through a highpass and lowpass filter. Take the end time input to output
+% ratio, as at the end the system should be stable.
+for i = 1:5
+    if (i == 1)
+        tao1 = coeff(1); % 20
+        tao2 = 0;
+    elseif(i == 2)
+        tao1 = coeff(2); % 150
+        tao2 = coeff(3); % 250
+    
+    elseif(i==3)
+        tao1 = coeff(4); % 500
+        tao2 = coeff(5); % 750
+    
+    elseif(i==4)
+        tao1 = coeff(6); % 1600
+        tao2 = coeff(7); % 2000
+        
+    else
+        % tao1 = 1/2/pi/19000;
+        tao1 = 0;
+        tao2 = coeff(8); % 20000
+    end
+            
+        in = zeros(size(time));
+        in(1) = 1;
+        if (tao1 == 0)
+            % Hout = lsim([1, 0],[1, 1/tao2], in, t); %highpass
+            Hout = 1.5*highpass(in, tao2, time, 5);
+
+        elseif(tao2 == 0)
+            % Hout = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
+            Hout = 1.5*lowpass(in, tao1, time, 5);
+
+        else
+            % intermediate = lsim(1/tao1, [1, 1/tao1], in, t); % lowpass
+
+            % Hout = lsim([1, 0],[1, 1/tao2], intermediate, t); %highpass
+            
+            Hout = 1.5/atten_fact(tao1,tao2,5,dt) * bandpass(in, tao1, tao2, 5, time);
+
+        end
+    
+    subplot(2, 1, 1);
+    hold on;
+    plot(time, abs(Hout));
+    title("|H(w)|");
+    xlabel("Time (s)");
+    ylabel("Magnitude");
+    subplot(2, 1, 2);
+    hold on;
+    semilogx(time, angle(Hout));
+    title("H(w) Angle");
+    xlabel("Time");
+    ylabel("Angle");
+
+end
+legend("Filter 1", "Filter 2", "Filter 3", "Filter 4", "Filter 5");
+
+end
+
+function impulse_preset ()
+% inputs needs to be length 8
+freq = 44.1e3;
+dt = 1/freq;
+time = 0:1/freq:.0075;
+
+f= logspace(1.3, 4.3);
+
+w = 2*pi*f;
+response = zeros(size(f));
+
+figure;
+hold on;
+% for every frequency in the logspace, create the input function and run it
+% through a highpass and lowpass filter. Take the end time input to output
+% ratio, as at the end the system should be stable.
+for i = 1:3
+    if (i == 1)
+            in = zeros(size(time));
+            in(1) = 1;
+            Hout = bass(in, time, dt);
+        
+    elseif(i == 2)
+            in = zeros(size(time));
+            in(1) = 1;
+            Hout = unity(in, time, dt);
+    
+    else
+            in = zeros(size(time));
+            in(1) = 1;
+            Hout = treble(in, time, dt);
+    end
+    
+    
+    subplot(2, 1, 1);
+    hold on;
+    plot(time, abs(Hout));
+    title("|H(w)|");
+    xlabel("Time (s)");
+    ylabel("Magnitude");
+    subplot(2, 1, 2);
+    hold on;
+    semilogx(time, angle(Hout));
+    title("H(w) Angle");
+    xlabel("Time");
+    ylabel("Angle");
+
+end
+
+legend("Bass", "Unity", "Treble");
+end
