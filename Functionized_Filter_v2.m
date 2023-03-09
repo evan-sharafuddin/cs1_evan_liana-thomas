@@ -23,9 +23,10 @@ w = 2*pi*f;
 response = zeros(size(f));
 
 %% Processing the jazz signals
-% loading audio
+% loading audio -- space station has different sampling frequency for some
+% reason
 giant_steps = audioread("Giant Steps Bass Cut.wav");
-space_station = audioread("Space Station - Treble Cut.wav");
+[space_station,space_freq] = audioread("Space Station - Treble Cut.wav");
 giant_time = 0:dt:(length(giant_steps)*dt-dt);
 space_time = 0:dt:(length(space_station)*dt-dt);
 
@@ -40,8 +41,8 @@ space_station_treble(:,2) = treble(space_station(:,2),space_time,dt);
 % before and after
 sound(giant_steps,freq),pause(3),clear sound
 sound(giant_steps_bass,freq),pause(5),clear sound
-sound(space_station,freq),pause(3),clear sound
-sound(space_station_treble,freq),pause(5),clear sound
+sound(space_station,space_freq),pause(3),clear sound
+sound(space_station_treble,space_freq),pause(5),clear sound
 
 % visualizing the changes -- only looking at one channel
 figure,hold on
@@ -52,11 +53,30 @@ title("Giant Steps, after bass-boosted preset"),clim([-140 -30]),xlim([0 12])
 hold off
 
 figure,hold on
-subplot(2,1,1),spectrogram(space_station(:,1),1048,200,1048,freq)
+subplot(2,1,1),spectrogram(space_station(:,1),1048,200,1048,space_freq);
 title("Space Station, before treble boost preset"),clim([-140 -30]),xlim([0 12])
-subplot(2,1,2),spectrogram(space_station_treble(:,1),1048,200,1048,freq)
+subplot(2,1,2),spectrogram(space_station_treble(:,1),1048,200,1048,space_freq)
 title("Space Station, after treble boost preset"),clim([-140 -30]),xlim([0 12])
 hold off
+
+%%
+figure,hold on
+spectrogram(giant_steps(:,1),1048,200,1048,space_freq);
+title("giant, before treble boost preset"),clim([-140 -30]),xlim([0 12])
+figure,spectrogram(giant_steps_bass(:,1),1048,200,1048,space_freq)
+title("gaint, after bass boost preset"),clim([-140 -30]),xlim([0 12])
+hold off
+
+[~,~,~,before_filter] = spectrogram(giant_steps(:,1),1048,200,1048,freq);
+[~,t,f,after_filter] = spectrogram(giant_steps_bass(:,1),1048,200,1048,freq);
+
+difference = abs(after_filter - before_filter);
+figure,imagesc(t(end:-1:1), f, flipud( 20.*log10(difference) )' )
+xlim([0 12e3])
+colorbar
+
+
+%%
 
 % demonstrating the unity filter
 giant_steps_unity = zeros(length(giant_steps),2);
@@ -81,16 +101,17 @@ sound(blue_green,freq)
 % bands of the equlaizer to be set to unity while the other three should be
 % mostly/completely attenuated
 blue_green_filtered = zeros(size(blue_green));
-blue_green_filtered(:,1) = myFilter(blue_green(:,1),blue_time,dt,[1 1 0 0 0],5);
-blue_green_filtered(:,2) = myFilter(blue_green(:,2),blue_time,dt,[1 1 0 0 0],5);
+blue_green_filtered(:,1) = myFilter(blue_green(:,1),blue_time,dt,[2 2 0 0 0],5);
+blue_green_filtered(:,2) = myFilter(blue_green(:,2),blue_time,dt,[2 2 0 0 0],5);
 
+%%
 % listening to sound after filter
 sound(blue_green_filtered,freq)
 figure,hold on
-subplot(2,1,1),title("Blue in Green with siren"),xlim([0 12])
-spectrogram(blue_green(:,1),1048,200,1048,freq)
-subplot(2,1,2),title("Blue in Green without siren"),xlim([0 12])
-spectrogram(blue_green_filtered(:,1),1048,200,1048,freq)
+subplot(2,1,1),spectrogram(blue_green(:,1),1048,200,1048,freq)
+title("Blue in Green with siren"),xlim([0 12])
+subplot(2,1,2),spectrogram(blue_green_filtered(:,1),1048,200,1048,freq)
+title("Blue in Green without siren"),xlim([0 12])
 hold off
 
 %% bird thing
