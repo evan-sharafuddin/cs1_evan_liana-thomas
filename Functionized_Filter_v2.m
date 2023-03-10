@@ -13,7 +13,9 @@
 % Let me know if anything doesn't make sense --Evan
 
 
-
+clear
+close all
+clc
 
 %% SET UP
 freq = 44.1e3;
@@ -39,12 +41,12 @@ space_station_treble(:,1) = treble(space_station(:,1),space_time,dt);
 space_station_treble(:,2) = treble(space_station(:,2),space_time,dt);
 
 % before and after
-sound(giant_steps,freq),pause(3),clear sound
-sound(giant_steps_bass,freq),pause(5),clear sound
-sound(space_station,space_freq),pause(3),clear sound
-sound(space_station_treble,space_freq),pause(5),clear sound
+% sound(giant_steps,freq),pause(3),clear sound
+% sound(giant_steps_bass,freq),pause(5),clear sound
+% sound(space_station,space_freq),pause(3),clear sound
+% sound(space_station_treble,space_freq),pause(5),clear sound
 
-% visualizing the changes -- only looking at one channel
+%% visualizing the changes -- only looking at one channel
 figure,hold on
 subplot(2,1,1),spectrogram(giant_steps(:,1),1048,200,1048,freq)
 title("Giant Steps, before bass-boosted preset"),clim([-140 -30]),xlim([0 12])
@@ -59,22 +61,37 @@ subplot(2,1,2),spectrogram(space_station_treble(:,1),1048,200,1048,space_freq)
 title("Space Station, after treble boost preset"),clim([-140 -30]),xlim([0 12])
 hold off
 
-%%
-figure,hold on
-spectrogram(giant_steps(:,1),1048,200,1048,space_freq);
-title("giant, before treble boost preset"),clim([-140 -30]),xlim([0 12])
-figure,spectrogram(giant_steps_bass(:,1),1048,200,1048,space_freq)
-title("gaint, after bass boost preset"),clim([-140 -30]),xlim([0 12])
-hold off
-
-[~,~,~,before_filter] = spectrogram(giant_steps(:,1),1048,200,1048,freq);
-[~,t,f,after_filter] = spectrogram(giant_steps_bass(:,1),1048,200,1048,freq);
-
-difference = abs(after_filter - before_filter);
-figure,imagesc(t(end:-1:1), f, flipud( 20.*log10(difference) )' )
-xlim([0 12e3])
-colorbar
-
+%% failed attempt to show the change in the spectrograms more clearly
+% figure,hold on
+% spectrogram(giant_steps(:,1),1048,200,1048,space_freq);
+% title("giant, before treble boost preset"),clim([-140 -30]),xlim([0 12])
+% figure,spectrogram(giant_steps_bass(:,1),1048,200,1048,space_freq)
+% title("gaint, after bass boost preset"),clim([-140 -30]),xlim([0 12])
+% hold off
+% 
+% close all
+% 
+% [~,~,~,before_filter] = spectrogram(giant_steps(:,1),1048,200,1048,freq);
+% [~,t,f,after_filter] = spectrogram(giant_steps_bass(:,1),1048,200,1048,freq);
+% 
+% difference = abs(after_filter - before_filter);
+% figure,imagesc(t(end:-1:1), f, flipud( 20.*log10(difference) )' )
+% xlim([0 12e3])
+% colorbar
+% title("difference, giant steps bass boost")
+% 
+% [~,~,~,before_filter] = spectrogram(space_station(:,1),1048,200,1048,space_freq);
+% [~,t,f,after_filter] = spectrogram(space_station_treble(:,1),1048,200,1048,space_freq);
+% 
+% difference = abs(flipud(after_filter') - flipud(before_filter'));
+% figure,imagesc(t(end:-1:1), f, pow2db(difference))
+% xlim([0 12e3])
+% colorbar
+% title("difference, space station treble boost")
+% 
+% [~,t,f,S]=spectrogram(space_station(:,1),1048,200,1048,space_freq);
+% figure,imagesc(t,f,pow2db(flipud(S'))),title('imagesc()'),colorbar,clim([-150,-30])
+% figure,spectrogram(space_station(:,1),1048,200,1048,space_freq);
 
 %%
 
@@ -83,6 +100,7 @@ giant_steps_unity = zeros(length(giant_steps),2);
 giant_steps_unity(:,1) = unity(giant_steps(:,1),giant_time,dt);
 giant_steps_unity(:,2) = unity(giant_steps(:,2),giant_time,dt);
 
+%% spectrogram
 figure,hold on
 subplot(2,1,1),spectrogram(giant_steps(:,1),1048,200,1048,freq)
 title("Giant Steps, before unity preset"),clim([-140 -30]),xlim([0 12])
@@ -107,6 +125,8 @@ blue_green_filtered(:,2) = myFilter(blue_green(:,2),blue_time,dt,[2 2 0 0 0],5);
 %%
 % listening to sound after filter
 sound(blue_green_filtered,freq)
+
+%% spectrograms
 figure,hold on
 subplot(2,1,1),spectrogram(blue_green(:,1),1048,200,1048,freq)
 title("Blue in Green with siren"),xlim([0 12])
@@ -121,13 +141,15 @@ bird_time = 0:dt:length(bird_input)*dt-dt;
 bird_filtered = zeros(size(bird_input));
 bird_filtered(:,1) = myFilter(bird_input(:,1),bird_time,dt,[0 0 1 0 0],5);
 bird_filtered(:,2) = myFilter(bird_input(:,2),bird_time,dt,[0 0 1 0 0],5);
+
+%% spectrograms
 figure,hold on
 subplot(2,1,1),spectrogram(bird_input(:,1),1048,200,1048,freq),title("Bird recording before filter")
 subplot(2,1,2),spectrogram(bird_filtered(:,1),1048,200,1048,freq),title("Bird recording after filter")
 hold off
 
-sound(bird_input,freq),pause(5),clear sound
-sound(bird_filtered,freq)
+% sound(bird_input,freq),pause(5),clear sound
+% sound(bird_filtered,freq)
 % woo it works to isolate that one call pretty well at the end of the clip
 
 %% LOAD AUDIO
