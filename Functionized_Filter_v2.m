@@ -1,17 +1,8 @@
-% I got the filters to filter a lot better. The cutoff frequencies still need to be optomized 
-% though and it might be nice for Thomas to graph some of the frequency responses of some 
-% of the filters. 
+%% Case Study 1 -- Equalizer
 
-% in myFilters() I multiplied the output from each filter by values to get them back 
-% up to the original audio level. I multipled the lowpass and highpass by 1.5 (trial
-% and error) but they still seemed quiet so might be good to play around with that. 
-% For the bandpass filters I multiplied by the reciprocal of the attenuation factor 
-% thing to kind of "cancel out" the attenuation, but then also multiplied by 1.5 to 
-% get it a little bit louder. Might be nice to change this as you change the 
-% cutoff frequencies but with everything set up the unity preset works pretty well
+% Evan Sharafuddin, Liana Tilton, Thomas Lang
 
-% Let me know if anything doesn't make sense --Evan
-
+% ESE 351
 
 clear
 close all
@@ -40,7 +31,7 @@ giant_steps_bass(:,2) = bass(giant_steps(:,2),giant_time,dt);
 space_station_treble(:,1) = treble(space_station(:,1),space_time,dt);
 space_station_treble(:,2) = treble(space_station(:,2),space_time,dt);
 
-% before and after
+% play audio
 % sound(giant_steps,freq),pause(3),clear sound
 % sound(giant_steps_bass,freq),pause(5),clear sound
 % sound(space_station,space_freq),pause(3),clear sound
@@ -60,40 +51,6 @@ title("Space Station, before treble boost preset"),clim([-140 -30]),xlim([0 12])
 subplot(2,1,2),spectrogram(space_station_treble(:,1),1048,200,1048,space_freq)
 title("Space Station, after treble boost preset"),clim([-140 -30]),xlim([0 12])
 hold off
-
-%% failed attempt to show the change in the spectrograms more clearly
-% figure,hold on
-% spectrogram(giant_steps(:,1),1048,200,1048,space_freq);
-% title("giant, before treble boost preset"),clim([-140 -30]),xlim([0 12])
-% figure,spectrogram(giant_steps_bass(:,1),1048,200,1048,space_freq)
-% title("gaint, after bass boost preset"),clim([-140 -30]),xlim([0 12])
-% hold off
-% 
-% close all
-% 
-% [~,~,~,before_filter] = spectrogram(giant_steps(:,1),1048,200,1048,freq);
-% [~,t,f,after_filter] = spectrogram(giant_steps_bass(:,1),1048,200,1048,freq);
-% 
-% difference = abs(after_filter - before_filter);
-% figure,imagesc(t(end:-1:1), f, flipud( 20.*log10(difference) )' )
-% xlim([0 12e3])
-% colorbar
-% title("difference, giant steps bass boost")
-% 
-% [~,~,~,before_filter] = spectrogram(space_station(:,1),1048,200,1048,space_freq);
-% [~,t,f,after_filter] = spectrogram(space_station_treble(:,1),1048,200,1048,space_freq);
-% 
-% difference = abs(flipud(after_filter') - flipud(before_filter'));
-% figure,imagesc(t(end:-1:1), f, pow2db(difference))
-% xlim([0 12e3])
-% colorbar
-% title("difference, space station treble boost")
-% 
-% [~,t,f,S]=spectrogram(space_station(:,1),1048,200,1048,space_freq);
-% figure,imagesc(t,f,pow2db(flipud(S'))),title('imagesc()'),colorbar,clim([-150,-30])
-% figure,spectrogram(space_station(:,1),1048,200,1048,space_freq);
-
-%%
 
 % demonstrating the unity filter
 giant_steps_unity = zeros(length(giant_steps),2);
@@ -122,7 +79,6 @@ blue_green_filtered = zeros(size(blue_green));
 blue_green_filtered(:,1) = myFilter(blue_green(:,1),blue_time,dt,[2 2 0 0 0],5);
 blue_green_filtered(:,2) = myFilter(blue_green(:,2),blue_time,dt,[2 2 0 0 0],5);
 
-%%
 % listening to sound after filter
 sound(blue_green_filtered,freq)
 
@@ -150,77 +106,32 @@ hold off
 
 % sound(bird_input,freq),pause(5),clear sound
 % sound(bird_filtered,freq)
-% woo it works to isolate that one call pretty well at the end of the clip
-
-%% LOAD AUDIO
-filename = "Giant Steps Bass Cut.wav";
-input = audioread(filename);
-input = input(1:5/dt);
-
-%% FILTER THAT AUDIOOOO
-
-%FILTERRRRRRZZZZ
-
-%gainzzzzz
-% gain = [0 0 1 0 0]; % setting all gains equal to 1 seems to be pretty good unity setting
-time = 0:dt:5-dt;
-%can throw this into a loop later
-% out = myFilter(input,time, dt,gain,5);
-
-% coeff = [25, 200, 250, 500, 750, 1600, 2000, 15000];
-% plot_all(coeff)
-
-outTreble = treble(input, time, dt);
-outBase = bass(input, time, dt);
-outUnity = unity(input, time, dt);
-
-% extracts the frequencies in each channel -- use to optomize the frequency
-% cutoff values
-% out1 = myFilter(input,time, dt,[1 0 0 0 0],5);
-% out2 = myFilter(input,time,dt,[0 1 0 0 0],5);
-% out3 = myFilter(input,time,dt,[0 0 1 0 0],5);
-% out4 = myFilter(input,time,dt,[0 0 0 1 0],5);
-% out5 = myFilter(input,time,dt,[0 0 0 0 1],5);
-%%
-%TEST: Just play original audio
-sound(input,freq),pause(5),clear sound
-
-% PLAY filtered audios
-sound(outTreble,freq),pause(5),clear sound
-%%
-% play sounds in each channel
-% sound(out1,freq),pause(5),clear sound
-% sound(out2,freq),pause(5),clear sound % at the moment, channels 1 and 2 are essentially the same 
-% sound(out3,freq),pause(5),clear sound
-% sound(out4,freq),pause(5),clear sound
-% sound(out5,freq),pause(5),clear sound
 
 %% FUNCTIONS BELOW
 
-%% TREBLE BOOST
+% TREBLE BOOST
 function output = treble (inputSig, time, dt)
 gain = [1 1 1 5 5];
 output = myFilter(inputSig,time, dt,gain,5);
 
 end
 
-%% BASS BOOST
+% BASS BOOST
 function output = bass(audio_in, time, dt)
 gain = [10 5 1 1 1];
 output = myFilter(audio_in,time, dt,gain,5);
 end
 
-%% UNITY
+% UNITY
 function output = unity(audio_in, time, dt)
 gain = [1 1 1 1 1]; % setting all gains equal to 1 seems to be pretty good unity setting
 output = myFilter(audio_in,time, dt,gain,5);
 end
 
-%% Gain to dB
+% Gain to dB
 function out = gainToDb(gain_val)
 out = 20*log(gain_val);
 end
-
 
 %% FILTER
 function output = myFilter(input,time, dt,gain,iter)
@@ -256,8 +167,6 @@ y = y + gain(5) * 1.5*highpass(input,hp_fc,time,3); % HP filter iter controlled 
 
 output = y;
 end
-
-
 
 %% FILTER FUNCTIONS
 
@@ -567,7 +476,7 @@ legend("Filter 1", "Filter 2", "Filter 3", "Filter 4", "Filter 5");
 
 end
 
-function impulse_preset ()
+function impulse_preset()
 % inputs needs to be length 8
 freq = 44.1e3;
 dt = 1/freq;
